@@ -1,0 +1,73 @@
+# docker compose up --build
+#
+#   App       http://localhost:8080
+#   API       http://localhost:4000  (also reachable through the app at /api)
+#   Postgres  localhost:5433         (user / password / database: vegachat)
+#
+# The first start runs the migrations and inserts the demo data.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vegachat
+      POSTGRES_PASSWORD: vegachat
+      POSTGRES_DB: vegachat
+    ports:
+      # 5433 on the host so a local Postgres on 5432 is left alone.
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vegachat -d vegachat"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # Defaults to the bundled Postgres. To use Supabase instead, put
+      # DATABASE_URL and DATABASE_SSL=true in a .env file next to this one
+      # (see .env.example).
+      DATABASE_URL: ${DATABASE_URL:-postgres://vegachat:vegachat@db:5432/vegachat}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
+      # Fine for a local demo. Set a real secret in the environment for anything else.
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-only-secret-change-me-0123456789abcdef}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      # Plain http on localhost; set to "true" when served over https.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # One proxy (the nginx in the client container) sits in front.
+      TRUST_PROXY: 1
+      UPLOAD_DIR: /app/server/uploads
+      SEED_ON_START: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    volumes:
+      - uploads:/app/server/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+
+volumes:
+  db-data:
+  uploads:

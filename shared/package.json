@@ -1,0 +1,7 @@
+{
+  "name": "vegachat-shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Constants, socket contract and permission rules shared by the VegaChat server and client."
+}

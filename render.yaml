@@ -1,0 +1,27 @@
+# Render Blueprint: one web service built from ./Dockerfile, with the database
+# on Supabase. In Render choose New > Blueprint and select this repository.
+# You will be asked for DATABASE_URL; everything else is filled in.
+services:
+  - type: web
+    name: vegachat
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      # Supabase > Connect > "Session pooler" connection string.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      # Render terminates https in front of the service.
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SEED_ON_START
+        value: "true"
+      # CLIENT_ORIGIN is not needed: the server uses RENDER_EXTERNAL_URL.
