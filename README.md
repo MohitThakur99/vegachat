@@ -2,6 +2,12 @@
 
 A real-time chat application: one-to-one messaging and group chats with role-based permissions, built so that every REST call and every socket event proves who the user is and checks what they are allowed to do.
 
+**Live demo: https://vegachat.onrender.com**
+
+- Sign in with any of the demo buttons on the login page (password `Password123!`), or create an account.
+- To see the real-time features, sign in as two different users in two browsers, or one normal and one private window.
+- The demo runs on free hosting that sleeps when idle, so **the first load can take about a minute**. Shared files and images do not survive a restart of the service; messages do.
+
 | | |
 |---|---|
 | Frontend | React 18 (Vite), Tailwind CSS, Zustand, React Router |
@@ -70,7 +76,7 @@ On first start the server creates its tables in the `public` schema and seeds th
 
 Supabase Auth is not used: authentication is implemented in this backend (bcrypt + JWT), as described in [section 9](#9-authentication-and-tokens).
 
-> I could not run this against a live Supabase project (it needs an account), so Option B is verified by construction rather than by test. Options A and C are what the test results below were produced on.
+> The live demo runs on Supabase through the Session pooler, so this path is in use. The automated test results below were produced on the bundled Postgres (Options A and C).
 
 ### Option C: Local development with hot reload
 
@@ -442,7 +448,7 @@ Group management (add, remove, roles, rename, delete) is done over REST; its *re
 
 **Not verified**
 
-- The Supabase path (section 1, Option B) has not been run against a real Supabase project.
+- The automated test suites were run against the bundled Postgres, not against Supabase. On the Supabase-backed live demo, sign-in, token refresh, loading conversations and the socket connection were checked by hand.
 - UI checks were automated in Chromium only. Firefox, Safari and real phones were not tested.
 
 ---
@@ -451,7 +457,7 @@ Group management (add, remove, roles, rename, delete) is done over REST; its *re
 
 The simplest shape keeps one origin, so the refresh cookie stays first-party. The root [Dockerfile](Dockerfile) builds a single image in which the Node server serves the API, the sockets and the built React client on one port.
 
-**Render + Supabase** (both have free plans):
+**Render + Supabase** (both have free plans). This is how https://vegachat.onrender.com is deployed:
 
 1. Create a Supabase project and copy its **Session pooler** connection string (Connect button), with the database password filled in.
 2. Push this repository to GitHub.
